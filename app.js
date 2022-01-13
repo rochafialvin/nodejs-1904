@@ -13,14 +13,37 @@ const server = http.createServer((req, res) => {
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
   };
 
+  // Membaca file
   const todosBuffer = fs.readFileSync("./data/todos.json");
-  console.log({ todosBuffer });
+  // Mengubah tipe data buffer menjadi array
   const todos = JSON.parse(todosBuffer);
 
-  // Setup informasi tambahan untuk dikirimkan dalam response bersamaan dengan data yang hendak dikirim (todos)
-  res.writeHead(200, header);
-  // Menadakan proses request berakhir dengan mengirim data (todos)
-  res.end(JSON.stringify(todos));
+  switch (req.method) {
+    case "GET":
+      // Setup informasi tambahan untuk dikirimkan dalam response bersamaan dengan data yang hendak dikirim (todos)
+      res.writeHead(200, header);
+      // Menadakan proses request berakhir dengan mengirim data (todos)
+      res.end(JSON.stringify(todos));
+      break;
+
+    case "POST":
+      // Akses value dari request body
+      req.on("data", (chunk) => {
+        // chunk masih bertipe data buffer, sehingga perlu diubah menjadi object
+        const newTodo = JSON.parse(chunk);
+        // Push data ke array todos
+        todos.push(newTodo);
+        // Simpan todos yang sudah ditambahkan satu data baru ke file todos.json
+        fs.writeFileSync("./data/todos.json", JSON.stringify(todos));
+      });
+
+      // Memberikan response
+      res.writeHead(201, header);
+      res.end("Todo berhasil di tambahkan");
+
+    default:
+      break;
+  }
 });
 
 // Menajalankan server pada port 2022
