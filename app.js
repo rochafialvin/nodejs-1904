@@ -21,6 +21,11 @@ const server = http.createServer((req, res) => {
   // Mengubah tipe data buffer menjadi array
   // todos : [ {}, {}]
   const todos = JSON.parse(todosBuffer);
+  // chaining (mengubungkan suatu operasi dengan operasi lain)
+  // argument kedua diberi nilai true agar hasil return nya berupa object
+  // req.url --> /todos/?id=1
+  // query --> {id: 1}
+  const query = url.parse(req.url, true).query;
 
   switch (req.method) {
     case "GET":
@@ -54,16 +59,40 @@ const server = http.createServer((req, res) => {
       break;
 
     case "PUT":
-      // chaining (mengubungkan suatu operasi dengan operasi lain)
-      // argument kedua diberi nilai true agar hasil return nya berupa object
-      // req.url --> /todos/?id=1
-      // query --> {id: 1}
-      const query = url.parse(req.url, true).query;
-      console.log(query);
-    // findIndex
+      req
+        .on("data", (body) => {
+          // body : <Buffer 45 67 85 ...
+          // bodyParsed : { isDone : true }
+          const bodyParsed = JSON.parse(body);
+          // id pada query bertipe data string, sehingga perlu diubah ke number untuk dibandingkan dengan id pada todos yang juga bertipe data number
+          // selectedIndex = 0
+          const selectedIndex = todos.findIndex(
+            (todo) => todo.id === parseInt(query.id)
+          );
+
+          // todos[0] --> { "id": 1, "action": "Exercise", "isDone": true }
+          todos[selectedIndex].isDone = bodyParsed.isDone;
+
+          // todos --> [ {}, {} ]
+          // todoString -- >"[{\"id\":1,\"action\":\"Exercise\", \"isDone\":\"true\"},{\"id\":2,\"action\":\"Study\", \"isDone\":\"false\"}]"
+          const todosString = JSON.stringify(todos);
+          fs.writeFileSync("./data/todos.json", todosString);
+        })
+        .on("end", () => {
+          res.writeHead(200, header);
+          res.end("Todo berhasil diubah");
+        });
 
     case "DELETE":
-    //
+      // id --> 3
+      const id = parseInt(query.id);
+      // todos --> [ {id: 1}, {id: 2}, {id: 3}, {id: 4} ]
+      // filteredTodos --> [ {id: 1}, {id: 2}, {id: 4} ]
+      const filteredTodos = todos.filter((todo) => todo.id !== id);
+      fs.writeFileSync("./data/todos.json", JSON.stringify(filteredTodos));
+
+      res.writeHead(200, header);
+      res.end("Todo berhasil dihapus");
   }
 });
 
