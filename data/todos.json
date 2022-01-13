@@ -1,0 +1,5 @@
+[
+  { "id": 1, "action": "Exercise" },
+  { "id": 2, "action": "Study" },
+  { "id": 3, "action": "Sleep" }
+]
